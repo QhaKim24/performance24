@@ -3,49 +3,88 @@ const noteMap = {};
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let currentWordList = [];
 
-// Store the wave element
-const wave = document.getElementById("wave");
+const canvas = document.getElementById('waveCanvas');
+canvas.width = window.innerWidth;
+canvas.height = 120;
+
+const ctx = canvas.getContext('2d');
 const inputBox = document.getElementById("inputBox");
 const prompt = document.getElementById("prompt");
 const typedWords = document.getElementById("typedWords");
 const playButton = document.getElementById("playButton");
 const finalSentence = document.getElementById("finalSentence");
 
-// Note frequencies for each letter (expanding the range to include a wider scale)
-const baseFrequency = 261.63; // C4
-const frequencyStep = 1.05946; // Ratio for each semitone (12th root of 2)
+const analyser = audioCtx.createAnalyser();
+analyser.fftSize = 1024;
+const bufferLength = analyser.fftSize;
+const dataArray = new Uint8Array(bufferLength);
 
+const baseFrequency = 261.63;
+const frequencyStep = 1.05946;
 letters.forEach((char, i) => {
   noteMap[char] = baseFrequency * Math.pow(frequencyStep, i);
 });
 
-// Function to play sound when a key is pressed
+function connectAnalyser(gain) {
+  gain.connect(analyser);
+  analyser.connect(audioCtx.destination);
+}
+
+// 🎨 다양한 색을 위한 팔레트
+const colorPalette = ['#FF6B6B', '#4ECDC4', '#556270', '#C7F464', '#FFCC5C', '#6A4C93', '#FF6F91', '#88D8B0'];
+
+function getRandomColor() {
+  return colorPalette[Math.floor(Math.random() * colorPalette.length)];
+}
+
+let currentStroke = '#4ECDC4';
+
+function drawWaveform() {
+  requestAnimationFrame(drawWaveform);
+  analyser.getByteTimeDomainData(dataArray);
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = currentStroke;
+  ctx.beginPath();
+
+  const sliceWidth = canvas.width / bufferLength;
+  let x = 0;
+
+  for (let i = 0; i < bufferLength; i++) {
+    const v = dataArray[i] / 128.0;
+    const y = (v * canvas.height) / 2; // 웨이브의 크기를 절반으로 줄임 (canvas.height / 2)
+
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+
+    x += sliceWidth;
+  }
+
+  ctx.stroke();
+}
+
+
+drawWaveform();
+
 const playNote = (frequency) => {
   const oscillator = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
 
   oscillator.type = 'sine';
   oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
-
-  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
 
   oscillator.connect(gain);
-  gain.connect(audioCtx.destination);
-
+  connectAnalyser(gain);
   oscillator.start();
   oscillator.stop(audioCtx.currentTime + 0.3);
 
-  // Animate wave
-  wave.style.opacity = 1;
-  wave.style.transform = 'scaleY(1)';
-  setTimeout(() => {
-    wave.style.transform = 'scaleY(0.5)';
-    wave.style.opacity = 0;
-  }, 100);
+  currentStroke = getRandomColor(); // 🎨 매 음마다 선 색 바꾸기
 };
 
-// Function to handle typing and storing words
 inputBox.addEventListener('input', (e) => {
   const value = e.target.value.toLowerCase();
   const lastChar = value[value.length - 1];
@@ -54,39 +93,34 @@ inputBox.addEventListener('input', (e) => {
     playNote(noteMap[lastChar]);
   }
 
-  typedWords.textContent = value; // Display typed word in real-time
+  typedWords.textContent = value;
 });
 
-// Event listener for the Enter key to store the typed word
 inputBox.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
-    e.preventDefault(); // Prevent form submission
+    e.preventDefault();
     const value = inputBox.value.trim();
-
     if (value) {
-      currentWordList.push(value); // Add typed word to the list
-      updateTypedWords(); // Update the displayed words
-      inputBox.value = ''; // Clear the input field
+      currentWordList.push(value);
+      updateTypedWords();
+      inputBox.value = '';
     }
   }
 });
 
-// Function to update the list of typed words
 const updateTypedWords = () => {
   typedWords.textContent = currentWordList.join(' / ');
 };
 
-// Event listener for the Play button
 playButton.addEventListener('click', () => {
   if (currentWordList.length > 0) {
     playMelody();
   }
 });
 
-// Function to play the melody with stored words
 const playMelody = () => {
-  finalSentence.textContent = "";  // Reset the final sentence
-  let delay = 0;  // Initial delay
+  finalSentence.textContent = "";
+  let delay = 0;
 
   currentWordList.forEach((word, index) => {
     setTimeout(() => {
@@ -96,13 +130,12 @@ const playMelody = () => {
           if (noteMap[char]) {
             playNote(noteMap[char]);
           }
-        }, i * 300); // Delay for each character in the word
+        }, i * 300);
       });
     }, delay);
-    delay += word.length * 300 + 500; // Increase delay for the next word
+    delay += word.length * 300 + 500;
   });
 
-  // Clear the words after melody plays
   setTimeout(() => {
     typedWords.textContent = "";
     currentWordList = [];
