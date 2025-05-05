@@ -5,7 +5,7 @@ let currentWordList = [];
 
 const canvas = document.getElementById('waveCanvas');
 canvas.width = window.innerWidth;
-canvas.height = 120;
+canvas.height = 200; // 웨이브의 높이를 적당히 설정
 
 const ctx = canvas.getContext('2d');
 const inputBox = document.getElementById("inputBox");
@@ -54,7 +54,7 @@ function drawWaveform() {
 
   for (let i = 0; i < bufferLength; i++) {
     const v = dataArray[i] / 128.0;
-    const y = (v * canvas.height) / 2; // 웨이브의 크기를 절반으로 줄임 (canvas.height / 2)
+    const y = (v * canvas.height) / 2;
 
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
@@ -64,7 +64,6 @@ function drawWaveform() {
 
   ctx.stroke();
 }
-
 
 drawWaveform();
 
@@ -82,7 +81,7 @@ const playNote = (frequency) => {
   oscillator.start();
   oscillator.stop(audioCtx.currentTime + 0.3);
 
-  currentStroke = getRandomColor(); // 🎨 매 음마다 선 색 바꾸기
+  currentStroke = getRandomColor(); // 매 음마다 선 색 바꾸기
 };
 
 inputBox.addEventListener('input', (e) => {
