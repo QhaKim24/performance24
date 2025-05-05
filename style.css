@@ -2,51 +2,39 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: #ffffff;
-  color: #111;
+  background-color: #ffffff; /* 부드러운 흰색 배경 */
+  color: #333;
   font-family: 'Helvetica Neue', sans-serif;
-  min-height: 100vh; /* 최소 높이를 100vh로 설정 */
-  overflow: hidden; /* body의 오버플로우를 숨김 */
+  min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: center; /* 수직 중앙 정렬 */
+  justify-content: center; /* 수평 중앙 정렬 */
   position: relative;
 }
 
-/* 메인 UI를 중앙보다 살짝 아래에 위치 */
+/* 메인 UI를 중앙에 배치 */
 .container {
   z-index: 1;
   text-align: center;
   width: 80%;
   max-width: 800px;
-  position: absolute;
-  top: 40%; /* UI를 화면 중간보다 살짝 아래로 */
-  left: 50%;
-  transform: translateX(-50%);
-  padding-top: 30px; /* UI 위쪽 패딩 */
-  padding-bottom: 30px; /* UI 아래쪽 패딩 */
-  box-sizing: border-box; /* padding이 내용에 영향을 미치지 않게 */
-  height: auto; /* 자동 높이 설정 */
+  padding-top: 30px;
+  padding-bottom: 30px;
+  box-sizing: border-box;
+  height: auto;
 }
 
 /* 웨이브 배경 캔버스 - 상단 중앙에 위치 */
 #waveCanvas {
   position: absolute;
-  top: 25%; /* 웨이브를 상단에 배치 */
+  top: 20%; /* 웨이브를 화면 상단에 배치 */
   left: 50%;
   transform: translateX(-50%);
   width: 100vw;
-  height: 200px; /* 웨이브 높이를 적당히 설정 */
+  height: 200px;
   z-index: 0;
   pointer-events: none;
-}
-
-/* 캔버스 기본 설정 */
-canvas#waveCanvas {
-  display: block;
   background: transparent;
-  border: none;
 }
 
 /* 텍스트 메시지 */
@@ -54,26 +42,36 @@ canvas#waveCanvas {
   font-size: 2.5rem;
   margin-bottom: 20px;
   color: #333;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
 /* 입력창 */
 .input-line input {
-  width: 80%;
-  padding: 12px;
-  font-size: 1.2rem;
-  background-color: #f2f2f2;
+  width: 100%;
+  max-width: 500px; /* 최대 크기 설정 */
+  padding: 15px;
+  font-size: 1.3rem;
+  background-color: #f8f8f8;
   color: #333;
   border: none;
-  border-bottom: 2px solid #ccc;
+  border-radius: 25px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   outline: none;
-  text-align: center;
+  text-align: center; /* 텍스트 중앙 정렬 */
+  transition: all 0.3s ease-in-out;
+}
+
+.input-line input:focus {
+  border: 2px solid #4ECDC4;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
 /* 입력된 단어 표시 */
 .typed-words {
   margin-top: 20px;
-  font-size: 1rem;
-  color: #777;
+  font-size: 1.1rem;
+  color: #555;
   min-height: 30px;
 }
 
@@ -84,22 +82,32 @@ canvas#waveCanvas {
 
 /* 버튼 디자인 */
 #playButton {
-  padding: 12px 20px;
-  font-size: 1.5rem;
-  background-color: #333;
+  padding: 15px 25px;
+  font-size: 1.4rem;
+  background-color: #4ECDC4;
   color: white;
   border: none;
+  border-radius: 30px;
   cursor: pointer;
   outline: none;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 #playButton:hover {
-  background-color: #555;
+  background-color: #56D8C5;
+  transform: scale(1.05);
+}
+
+#playButton:active {
+  transform: scale(0.95);
 }
 
 /* 완성된 문장 */
 .final-sentence {
   margin-top: 30px;
-  font-size: 1.5rem;
-  color: #000;
+  font-size: 1.6rem;
+  color: #333;
+  font-weight: bold;
+  text-align: center;
+  line-height: 1.5;
 }
