@@ -5,7 +5,7 @@ let currentWordList = [];
 
 const canvas = document.getElementById('waveCanvas');
 canvas.width = window.innerWidth;
-canvas.height = 200; // 웨이브의 높이를 적당히 설정
+canvas.height = 200;
 
 const ctx = canvas.getContext('2d');
 const inputBox = document.getElementById("inputBox");
@@ -30,7 +30,6 @@ function connectAnalyser(gain) {
   analyser.connect(audioCtx.destination);
 }
 
-// 🎨 다양한 색을 위한 팔레트
 const colorPalette = ['#FF6B6B', '#4ECDC4', '#556270', '#C7F464', '#FFCC5C', '#6A4C93', '#FF6F91', '#88D8B0'];
 
 function getRandomColor() {
@@ -81,7 +80,7 @@ const playNote = (frequency) => {
   oscillator.start();
   oscillator.stop(audioCtx.currentTime + 0.3);
 
-  currentStroke = getRandomColor(); // 매 음마다 선 색 바꾸기
+  currentStroke = getRandomColor();
 };
 
 inputBox.addEventListener('input', (e) => {
@@ -140,3 +139,21 @@ const playMelody = () => {
     currentWordList = [];
   }, delay);
 };
+
+// 메뉴 토글 및 프리셋 버튼 기능
+const menuToggle = document.getElementById("menuToggle");
+const presetMenu = document.getElementById("presetMenu");
+
+menuToggle.addEventListener("click", () => {
+  presetMenu.style.display = presetMenu.style.display === "block" ? "none" : "block";
+});
+
+document.querySelectorAll(".preset-btn").forEach(button => {
+  button.addEventListener("click", () => {
+    const preset = button.dataset.preset;
+    const words = preset.split(" ");
+    currentWordList = words;
+    updateTypedWords();
+    presetMenu.style.display = "none";
+  });
+});
