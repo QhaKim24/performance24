@@ -1,18 +1,21 @@
 const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
 const noteMap = {};
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-let currentWordList = [];
+let lyricsList = [];
+let loopIndex = 0;
+let loopInterval;
+let typingTimeout;
+let isMuted = false;
 
 const canvas = document.getElementById('waveCanvas');
 canvas.width = window.innerWidth;
 canvas.height = 200;
-
 const ctx = canvas.getContext('2d');
+
 const inputBox = document.getElementById("inputBox");
-const prompt = document.getElementById("prompt");
-const typedWords = document.getElementById("typedWords");
-const playButton = document.getElementById("playButton");
-const finalSentence = document.getElementById("finalSentence");
+const addButton = document.getElementById("addButton");
+const lyricsDisplay = document.getElementById("lyricsDisplay");
+const wordFlow = document.getElementById("wordFlow");
 
 const analyser = audioCtx.createAnalyser();
 analyser.fftSize = 1024;
@@ -30,130 +33,164 @@ function connectAnalyser(gain) {
   analyser.connect(audioCtx.destination);
 }
 
-const colorPalette = ['#FF6B6B', '#4ECDC4', '#556270', '#C7F464', '#FFCC5C', '#6A4C93', '#FF6F91', '#88D8B0'];
-
-function getRandomColor() {
-  return colorPalette[Math.floor(Math.random() * colorPalette.length)];
-}
-
-let currentStroke = '#4ECDC4';
-
 function drawWaveform() {
   requestAnimationFrame(drawWaveform);
   analyser.getByteTimeDomainData(dataArray);
-
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   ctx.lineWidth = 2;
-  ctx.strokeStyle = currentStroke;
+  ctx.strokeStyle = '#4ECDC4';
   ctx.beginPath();
 
   const sliceWidth = canvas.width / bufferLength;
   let x = 0;
-
   for (let i = 0; i < bufferLength; i++) {
     const v = dataArray[i] / 128.0;
     const y = (v * canvas.height) / 2;
-
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     x += sliceWidth;
   }
-
   ctx.stroke();
 }
-
 drawWaveform();
 
-const playNote = (frequency) => {
-  const oscillator = audioCtx.createOscillator();
+function playNote(freq) {
+  if (isMuted) return;
+  const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
-
-  oscillator.type = 'sine';
-  oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
   gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-
-  oscillator.connect(gain);
-  connectAnalyser(gain);
-  oscillator.start();
-  oscillator.stop(audioCtx.currentTime + 0.3);
-
-  currentStroke = getRandomColor();
-};
+  osc.connect(gain);
+  gain.connect(analyser);
+  analyser.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.3);
+}
 
 inputBox.addEventListener('input', (e) => {
-  const value = e.target.value.toLowerCase();
-  const lastChar = value[value.length - 1];
-
-  if (noteMap[lastChar]) {
-    playNote(noteMap[lastChar]);
-  }
-
-  typedWords.textContent = value;
+  const lastChar = e.target.value.slice(-1).toLowerCase();
+  if (noteMap[lastChar]) playNote(noteMap[lastChar]);
+  if (loopInterval) clearInterval(loopInterval);
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(restartLoop, 2000);
 });
 
 inputBox.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    const value = inputBox.value.trim();
-    if (value) {
-      currentWordList.push(value);
-      updateTypedWords();
-      inputBox.value = '';
+  if (e.key === 'Enter') e.preventDefault();
+});
+
+addButton.addEventListener('click', () => {
+  const value = inputBox.value.trim();
+  if (!value) return;
+  lyricsList.push(value);
+  inputBox.value = '';
+  updateWordFlowDisplay();
+  restartLoop();
+});
+
+function updateLyricsDisplay() {
+  lyricsDisplay.innerHTML = '';
+  lyricsList.forEach((word, i) => {
+    const line = document.createElement('div');
+    line.className = 'lyrics-line';
+    const index = lyricsList.length - i;
+    line.style.opacity = index > 8 ? 0 : index > 5 ? 0.3 : 1;
+    line.textContent = word;
+    lyricsDisplay.appendChild(line);
+  });
+}
+
+function updateWordFlowDisplay() {
+  wordFlow.innerHTML = '';
+  const maxVisible = 20;
+
+  lyricsList.forEach((word, i) => {
+    const span = document.createElement('span');
+    span.className = 'word-item';
+    span.textContent = word;
+
+    const positionFromEnd = lyricsList.length - 1 - i;
+    if (positionFromEnd >= maxVisible) {
+      span.style.opacity = 0;
+    } else if (positionFromEnd >= maxVisible - 5) {
+      span.style.opacity = 0.3;
+    } else {
+      span.style.opacity = 1;
     }
-  }
-});
 
-const updateTypedWords = () => {
-  typedWords.textContent = currentWordList.join(' / ');
-};
+    wordFlow.appendChild(span);
+  });
+  scrollWordFlowToBottom();
+}
 
-playButton.addEventListener('click', () => {
-  if (currentWordList.length > 0) {
-    playMelody();
-  }
-});
+function scrollWordFlowToBottom() {
+  wordFlow.scrollTop = wordFlow.scrollHeight;
+}
 
-const playMelody = () => {
-  finalSentence.textContent = "";
-  let delay = 0;
-
-  currentWordList.forEach((word, index) => {
+function playWord(word) {
+  word.split('').forEach((char, i) => {
     setTimeout(() => {
-      finalSentence.textContent += word + " ";
-      word.split("").forEach((char, i) => {
-        setTimeout(() => {
-          if (noteMap[char]) {
-            playNote(noteMap[char]);
-          }
-        }, i * 300);
-      });
-    }, delay);
-    delay += word.length * 300 + 500;
+      if (noteMap[char]) playNote(noteMap[char]);
+    }, i * 300);
+  });
+}
+
+function restartLoop() {
+  if (loopInterval) clearInterval(loopInterval);
+  loopIndex = 0;
+  if (lyricsList.length > 0) startLoop();
+}
+
+function startLoop() {
+  loopInterval = setInterval(() => {
+    const word = lyricsList[loopIndex];
+    playWord(word);
+    loopIndex = (loopIndex + 1) % lyricsList.length;
+  }, getWordDuration(lyricsList[loopIndex]) + 500);
+}
+
+function getWordDuration(word) {
+  return word.length * 300;
+}
+
+
+
+const clearButton = document.getElementById("clearButton");
+if (clearButton) {
+  clearButton.addEventListener("click", () => {
+    lyricsList = [];
+    wordFlow.innerHTML = '';
+    clearInterval(loopInterval);
+  });
+}
+
+const muteButton = document.getElementById("muteButton");
+if (muteButton) {
+  muteButton.addEventListener("click", () => {
+    isMuted = !isMuted;
+    muteButton.textContent = isMuted ? "🔇" : "🔊";
+  });
+}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".preset-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const words = btn.dataset.preset.split(" ");
+      lyricsList.push(...words);
+      updateWordFlowDisplay();
+      restartLoop();
+    });
   });
 
-  setTimeout(() => {
-    typedWords.textContent = "";
-    currentWordList = [];
-  }, delay);
-};
-
-// 메뉴 토글 및 프리셋 버튼 기능
-const menuToggle = document.getElementById("menuToggle");
-const presetMenu = document.getElementById("presetMenu");
-
-menuToggle.addEventListener("click", () => {
-  presetMenu.style.display = presetMenu.style.display === "block" ? "none" : "block";
-});
-
-document.querySelectorAll(".preset-btn").forEach(button => {
-  button.addEventListener("click", () => {
-    const preset = button.dataset.preset;
-    const words = preset.split(" ");
-    currentWordList = words;
-    updateTypedWords();
-    presetMenu.style.display = "none";
+  document.querySelectorAll(".mode-btn").forEach(button => {
+    button.addEventListener("click", () => {
+      const mode = button.dataset.mode;
+      document.body.className = '';
+      if (mode !== "default") {
+        document.body.classList.add(`${mode}-mode`);
+      }
+    });
   });
 });
