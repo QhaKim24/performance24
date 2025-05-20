@@ -9,28 +9,47 @@
 <body>
   <canvas id="waveCanvas"></canvas>
 
-  <!-- Menu Button and Preset Dropdown -->
-  <div class="menu-container">
-    <button id="menuToggle">☰</button>
-    <div class="preset-menu" id="presetMenu">
-      <button class="preset-btn" data-preset="hello world">hello world</button>
-      <button class="preset-btn" data-preset="dream big">dream big</button>
-      <button class="preset-btn" data-preset="code music">code music</button>
-    </div>
+  <!-- 메뉴 -->
+  <nav class="menu-bar">
+  <span class="logo">🎵 Typing Melody</span>
+  <div class="menu-links">
+    <button class="preset-btn" data-preset="hello world">hello world</button>
+    <button class="preset-btn" data-preset="dream big">dream big</button>
+    <button class="preset-btn" data-preset="code music">code music</button>
   </div>
+</nav>
 
   <div class="container">
-    <div class="prompt" id="prompt">Type something!</div>
-    <div class="input-line">
-      <input type="text" id="inputBox" placeholder="Type here and press Enter..." />
-    </div>
-    <div class="typed-words" id="typedWords"></div>
-    <div class="play-area">
-      <button id="playButton">Play</button>
-    </div>
-    <div class="final-sentence" id="finalSentence"></div>
+    <!-- ✅ 흐르는 단어 영역만 사용 -->
+     <div class="word-flow" id="wordFlow"></div>
+
+
+
+  <div class="input-line">
+  <!-- 왼쪽 버튼 그룹 -->
+  <div class="left-buttons">
+    <button id="muteButton">🔊</button>
+    <button id="clearButton">Clear</button>
   </div>
 
-  <script src="script.js"></script>
+  <!-- 입력창 -->
+  <input type="text" id="inputBox" placeholder="Type your word..." />
+
+  <!-- 오른쪽 Add 버튼 -->
+    <button id="addButton">Add</button>
+  </div>
+</div>
+
+<div class="mode-buttons">
+  <button class="mode-btn" data-mode="default">Basic</button>
+  <button class="mode-btn" data-mode="sad">Blue</button>
+  <button class="mode-btn" data-mode="happy">Happy</button>
+  <button class="mode-btn" data-mode="excited">Excited</button>
+  <button class="mode-btn" data-mode="dark">Dark</button>
+  <button class="mode-btn" data-mode="calm">Calm</button>
+</div>
+
+
+<script src="script.js"></script>
 </body>
 </html>
